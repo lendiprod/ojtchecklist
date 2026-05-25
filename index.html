@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OJT Sales Advisor Academy</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a192f">
+    
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --bg-navy: #0a192f;
+            --card-navy: #112240;
+            --text-main: #ccd6f6;
+            --text-muted: #8892b0;
+            --gold: #d4af37;
+            --gold-hover: #f1c40f;
+            --danger: #ff4d4d;
+            --success: #2ecc71;
+            --white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body { background-color: var(--bg-navy); color: var(--text-main); padding-bottom: 70px; overflow-x: hidden; }
+
+        /* Header */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card-navy); box-shadow: 0 2px 10px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: bold; font-size: 1.2rem; color: var(--white); }
+        .logo span { color: var(--gold); }
+        .header-actions { display: flex; gap: 10px; }
+        select, input, textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #233554; background: var(--bg-navy); color: var(--text-main); outline: none; }
+        select:focus, input:focus, textarea:focus { border-color: var(--gold); }
+
+        /* Buttons */
+        button { border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-gold { background: var(--gold); color: var(--bg-navy); }
+        .btn-gold:hover { background: var(--gold-hover); }
+        .btn-gold-outline { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
+        .btn-outline { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); }
+        .mb-10 { margin-bottom: 10px; display: block; width: 100%; }
+
+        /* Main & Cards */
+        main { padding: 15px; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card-navy); border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .card h3 { color: var(--gold); margin-bottom: 15px; font-size: 1.1rem; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+
+        /* Dashboard Specifics */
+        .summary-card h2 { color: var(--white); font-size: 1.5rem; }
+        .summary-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+        .dash-stats { display: flex; justify-content: space-between; margin-top: 20px; text-align: center; }
+        .stat-box { background: var(--bg-navy); padding: 10px; border-radius: 8px; flex: 1; margin: 0 5px; }
+        .stat-box strong { display: block; color: var(--gold); font-size: 1.2rem; margin-top: 5px; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .badge.safe { background: rgba(46, 204, 113, 0.2); color: var(--success); }
+        .badge.danger { background: rgba(255, 77, 77, 0.2); color: var(--danger); }
+
+        /* Progress Ring CSS */
+        .progress-ring { display: flex; justify-content: center; margin: 20px 0; }
+        .progress-circle { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(var(--gold) 0%, var(--bg-navy) 0%); display: flex; align-items: center; justify-content: center; position: relative; }
+        .progress-circle::before { content: ""; position: absolute; width: 100px; height: 100px; background-color: var(--card-navy); border-radius: 50%; }
+        .progress-circle span { position: relative; font-size: 1.5rem; font-weight: bold; color: var(--white); }
+
+        /* Lists & SOP */
+        .list-item { background: var(--bg-navy); padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--gold); }
+        .list-item.danger { border-left-color: var(--danger); background: rgba(255, 77, 77, 0.05); }
+        
+        .sop-item { padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .sop-item span { line-height: 1.3; }
+        .sop-actions button { padding: 5px 12px; font-weight: bold; border-radius: 4px; margin-left: 5px; }
+        .sop-actions .btn-yes.active { background: var(--success); color: white; border-color: var(--success); }
+        .sop-actions .btn-no.active { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--card-navy); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 100; }
+        .nav-item { color: var(--text-muted); text-decoration: none; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--gold); }
+
+        /* Offline & Modal */
+        #offline-indicator { background: var(--danger); color: white; text-align: center; padding: 5px; font-size: 0.8rem; font-weight: bold; }
+        .hidden { display: none !important; }
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index: 1000; }
+        .modal-content { background: var(--card-navy); padding: 30px; border-radius: 12px; text-align: center; border: 2px solid var(--danger); max-width: 90%; }
+        .critical-alert h2 { color: var(--danger); margin-bottom: 10px; }
+        .critical-alert p { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="offline-indicator" class="hidden">OFFLINE MODE</div>
+    
+    <header class="top-bar">
+        <div class="logo">OJT <span>Academy</span></div>
+        <div class="header-actions">
+            <select id="trainee-selector"></select>
+            <button id="btn-add-trainee" class="btn-gold-outline">+ New</button>
+        </div>
+    </header>
+
+    <main id="app-content">
+        <section id="tab-dashboard" class="tab-content active">
+            <div class="card summary-card">
+                <h2 id="dash-trainee-name">Trainee Name</h2>
+                <p>Store: <span id="dash-store">...</span> | Mentor: <span id="dash-mentor">...</span></p>
+                <div class="progress-ring">
+                    <div class="progress-circle" id="dash-progress-circle">
+                        <span id="dash-progress-text">0%</span>
+                    </div>
+                </div>
+                <div class="dash-stats">
+                    <div class="stat-box">
+                        <small>Day</small>
+                        <strong id="dash-day">0/20</strong>
+                    </div>
+                    <div class="stat-box">
+                        <small>Avg Score</small>
+                        <strong id="dash-score">0.0</strong>
+                    </div>
+                    <div class="stat-box">
+                        <small>Total Error</small>
+                        <strong id="dash-error-count">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card warning-card">
+                <h3>Critical SOP Status</h3>
+                <p>Pass: <span id="dash-sop-pass" class="badge safe">0</span> | Fail: <span id="dash-sop-fail" class="badge danger">0</span></p>
+            </div>
+        </section>
+
+        <section id="tab-learning" class="tab-content">
+            <div class="card form-card">
+                <h3>Daily Learning Log</h3>
+                <form id="form-learning">
+                    <div class="input-group">
+                        <label>Day (1-20)</label>
+                        <input type="number" id="log-day" min="1" max="20" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Phase (Auto)</label>
+                        <input type="text" id="log-phase" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Competency</label>
+                        <select id="log-competency" required>
+                            <option value="">Pilih...</option>
+                            <option value="1. SALESMANSHIP">1. SALESMANSHIP</option>
+                            <option value="2. PRODUCT KNOWLEDGE">2. PRODUCT KNOWLEDGE</option>
+                            <option value="3. PROFESSIONAL GROOMING">3. PROFESSIONAL GROOMING</option>
+                            <option value="4. MERCHANDISING">4. MERCHANDISING</option>
+                            <option value="5. HANDLING COMPLAIN">5. HANDLING COMPLAIN</option>
+                            <option value="6. REPORTING">6. REPORTING</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Score (1-10)</label>
+                        <input type="number" id="log-score" min="1" max="10" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Notes</label>
+                        <textarea id="log-notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn-gold">Save Log</button>
+                </form>
+            </div>
+            <div id="learning-list" class="list-container"></div>
+        </section>
+
+        <section id="tab-error" class="tab-content">
+            <div class="card form-card">
+                <h3>Catatan Kesalahan & Tindakan Koreksi</h3>
+                <form id="form-error">
+                    <div class="input-group">
+                        <label>Tanggal</label>
+                        <input type="date" id="err-date" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Deskripsi Error</label>
+                        <textarea id="err-desc" required rows="2"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Akar Masalah</label>
+                        <input type="text" id="err-root" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Aksi Perbaikan</label>
+                        <input type="text" id="err-action" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Status</label>
+                        <select id="err-status" required>
+                            <option value="Not Yet">Not Yet</option>
+                            <option value="Done">Done</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-gold">Submit Error</button>
+                </form>
+            </div>
+            <div id="error-list" class="list-container"></div>
+        </section>
+
+        <section id="tab-sop" class="tab-content">
+            <div class="card form-card">
+                <h3>Critical SOP Validation</h3>
+                <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:15px;">SEMUA ITEM WAJIB = YES | NO = GAGAL OJT LANGSUNG</p>
+                <div id="sop-checklist" class="sop-list">
+                    </div>
+            </div>
+        </section>
+
+        <section id="tab-export" class="tab-content">
+            <div class="card form-card">
+                <h3>Data Management</h3>
+                <button id="btn-export-excel" class="btn-gold mb-10">Export to Excel</button>
+                <button id="btn-backup" class="btn-outline mb-10">Backup JSON</button>
+                
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+                
+                <h4>Trainee Profile</h4>
+                <form id="form-trainee">
+                    <div class="input-group">
+                        <label>Nama Trainee</label>
+                        <input type="text" id="tr-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Nama Store</label>
+                        <input type="text" id="tr-store" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Nama Mentor</label>
+                        <input type="text" id="tr-mentor" required>
+                    </div>
+                    <button type="submit" class="btn-gold">Save Profile</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" data-target="tab-dashboard">Dash</a>
+        <a href="#" class="nav-item" data-target="tab-learning">Learn</a>
+        <a href="#" class="nav-item" data-target="tab-error">Error</a>
+        <a href="#" class="nav-item" data-target="tab-sop">SOP</a>
+        <a href="#" class="nav-item" data-target="tab-export">Data</a>
+    </nav>
+
+    <div id="modal-critical" class="modal hidden">
+        <div class="modal-content critical-alert">
+            <h2>⚠️ GAGAL OJT LANGSUNG ⚠️</h2>
+            <p>Trainee telah melanggar SOP Critical.</p>
+            <button id="btn-close-modal" class="btn-outline">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        const DB_KEY = 'ojt_academy_data_v2';
+
+        // DATABASE SOP CRITICAL SESUAI PDF
+        const SOP_MASTER = [
+            { cat: "1. SOP GROOMING", items: ["Standard grooming perusahaan", "Standard penggunaan uniform", "Standard make-up dan accessories", "Standard kebersihan diri dan kuku", "Standard body language saat melayani customer", "Standard hospitality dan attitude", "Standard komunikasi professional kepada customer"] },
+            { cat: "2. SOP OPERASIONAL HARIAN", items: ["Flow opening store", "Flow closing store", "Penggunaan Sales App", "Penggunaan EDC & QRIS", "Flow briefing harian", "Flow transaksi customer", "Flow stock balancing harian", "Flow serah terima shift", "Tanggung jawab area kerja store"] },
+            { cat: "3. SOP BUYBACK", items: ["Pengertian buyback", "Kategori barang buyback", "Kondisi barang yang dapat dibuyback", "Proses pengecekan & penimbangan barang", "Dokumen dan invoice buyback", "Penginputan invoice buyback (UBS dan HBS)", "Informasi pembayaran buyback", "Komunikasi kepada customer terkait buyback", "Melakukan Proses Buyback Sesuai SOP dan Tanpa Human Error", "Melakukan proses terima dan kirim barang buyback"] },
+            { cat: "4. SOP REPARASI", items: ["Jenis layanan reparasi & Syarat ketentuan reparasi", "Komunikasi dan identifikasi jenis reparasi pada customer", "Flow dan estimasi penerimaan barang reparasi", "Kesesuaian kadar, berat, dan fisik barang yang direparasi", "Melakukan langkah input transaksi reparasi dengan benar", "Flow follow up reparasi pada customer", "Melakukan proses terima dan kirim barang reparasi"] },
+            { cat: "5. PRE-ORDER (PO)", items: ["Pengertian Pre Order", "Syarat & ketentuan PO", "Flow PO produk customer dan estimasi", "Pengisian data PO di Sales App", "Flow terima barang PO dan follow up customer", "Informasi pembayaran PO", "Melakukan proses kirim dan terima barang PO"] },
+            { cat: "6. TUKAR TAMBAH", items: ["Syarat & ketentuan tukar tambah", "Flow transaksi tukar tambah", "Proses pengecekan barang customer", "Penimbangan dan pengecekan kadar", "Perhitungan tukar tambah", "Flow invoicing tukar tambah", "Membuat dan memvalidasi invoice transaksi sesuai prosedur", "Komunikasi hasil perhitungan kepada customer", "Risiko kesalahan transaksi tukar tambah", "Melakukan proses terima dan kirim barang tukar tambah"] },
+            { cat: "7. SOP BUYBACK SAVING", items: ["Pengertian buyback saving", "Perbedaan buyback biasa dan buyback saving", "Flow transaksi buyback saving", "Pengecekan data customer", "Informasi pembayaran buyback saving", "Dokumen transaksi buyback saving", "Komunikasi kepada customer terkait buyback saving", "Risiko kesalahan transaksi buyback saving"] },
+            { cat: "8. SOP DAILY STOCK BALANCE", items: ["Melakukan pengecekan stock fisik sesuai data Sales App", "Memahami proses identifikasi selisih stock", "Memastikan hasil stock opname dilaporkan sesuai prosedur", "Pengecekan stock & buffer display", "Tanggung jawab keamanan stock", "Melakukan proses terima dan kirim barang daily stok"] },
+            { cat: "9. SOP DAILY CASH BALANCE (SL/PIC)", items: ["Pentingnya akurasi cash / tunai di store dan sistem", "Alur cash balance harian", "Pengecekan dan pencocokan transaksi tunai dan non tunai", "Flow penyetoran uang toko", "Dokumen cash balance", "Risiko selisih cash", "Tanggung jawab keamanan uang store"] }
+        ];
+
+        let appData = { trainees: [], currentId: null };
+
+        function generateFlatSOP() {
+            let flatSOP = [];
+            SOP_MASTER.forEach(group => {
+                group.items.forEach(item => {
+                    flatSOP.push({ category: group.cat, name: item, status: null, evidence: "" });
+                });
+            });
+            return flatSOP;
+        }
+
+        function initData() {
+            try {
+                const local = localStorage.getItem(DB_KEY);
+                if (local) appData = JSON.parse(local);
+                if (appData.trainees.length === 0) createNewTrainee("Trainee Baru", "-", "-");
+                else if (!appData.currentId) appData.currentId = appData.trainees[0].id;
+                
+                updateTraineeSelector();
+                renderDashboard();
+                renderSOP();
+                renderLogs();
+            } catch (e) { console.error("Data init error", e); }
+        }
+
+        function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); }
+
+        function createNewTrainee(name, store, mentor) {
+            const newId = Date.now().toString();
+            const trainee = {
+                id: newId, name, store, mentor,
+                learning: [], errors: [],
+                sop: generateFlatSOP()
+            };
+            appData.trainees.push(trainee);
+            appData.currentId = newId;
+            saveData();
+            return newId;
+        }
+
+        function getCurrentTrainee() { return appData.trainees.find(t => t.id === appData.currentId) || null; }
+
+        // Navigasi Tabs
+        document.querySelectorAll('.nav-item').forEach(nav => {
+            nav.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                nav.classList.add('active');
+                document.getElementById(nav.dataset.target).classList.add('active');
+            });
+        });
+
+        const selector = document.getElementById('trainee-selector');
+        function updateTraineeSelector() {
+            selector.innerHTML = '';
+            appData.trainees.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id; opt.textContent = t.name;
+                if (t.id === appData.currentId) opt.selected = true;
+                selector.appendChild(opt);
+            });
+        }
+
+        selector.addEventListener('change', (e) => {
+            appData.currentId = e.target.value;
+            saveData(); initData();
+        });
+
+        document.getElementById('btn-add-trainee').addEventListener('click', () => {
+            createNewTrainee("Trainee " + (appData.trainees.length + 1), "-", "-");
+            initData();
+            document.querySelector('[data-target="tab-export"]').click();
+        });
+
+        // Auto-fill Phase sesuai PDF
+        document.getElementById('log-day').addEventListener('input', (e) => {
+            const day = parseInt(e.target.value);
+            const p = document.getElementById('log-phase');
+            if (day >= 1 && day <= 5) p.value = "Phase 1 - Observe and Store Adaptation";
+            else if (day >= 6 && day <= 10) p.value = "Phase 2 - Guided Practice";
+            else if (day >= 11 && day <= 15) p.value = "Phase 3 - Monitored Execution";
+            else if (day >= 16 && day <= 20) p.value = "Phase 4 - Independent Execution";
+            else p.value = "-";
+        });
+
+        function renderDashboard() {
+            const t = getCurrentTrainee();
+            if (!t) return;
+            
+            document.getElementById('dash-trainee-name').textContent = t.name;
+            document.getElementById('dash-store').textContent = t.store;
+            document.getElementById('dash-mentor').textContent = t.mentor;
+
+            const daysDone = [...new Set(t.learning.map(l => l.day))].length;
+            const progPercent = Math.round((daysDone / 20) * 100);
+            document.getElementById('dash-day').textContent = `${daysDone}/20`;
+            document.getElementById('dash-progress-text').textContent = `${progPercent}%`;
+            document.getElementById('dash-progress-circle').style.background = `conic-gradient(var(--gold) ${progPercent}%, var(--bg-navy) 0%)`;
+
+            const totalScore = t.learning.reduce((acc, curr) => acc + parseInt(curr.score), 0);
+            document.getElementById('dash-score').textContent = t.learning.length ? (totalScore / t.learning.length).toFixed(1) : "0.0";
+            document.getElementById('dash-error-count').textContent = t.errors.length;
+
+            const sopPass = t.sop.filter(s => s.status === true).length;
+            const sopFail = t.sop.filter(s => s.status === false).length;
+            document.getElementById('dash-sop-pass').textContent = sopPass;
+            document.getElementById('dash-sop-fail').textContent = sopFail;
+
+            document.getElementById('tr-name').value = t.name;
+            document.getElementById('tr-store').value = t.store;
+            document.getElementById('tr-mentor').value = t.mentor;
+        }
+
+        // Form Submissions
+        document.getElementById('form-trainee').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const t = getCurrentTrainee();
+            t.name = document.getElementById('tr-name').value.trim();
+            t.store = document.getElementById('tr-store').value.trim();
+            t.mentor = document.getElementById('tr-mentor').value.trim();
+            saveData(); initData(); alert("Profile saved!");
+        });
+
+        document.getElementById('form-learning').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const t = getCurrentTrainee();
+            t.learning.push({
+                id: Date.now(),
+                day: parseInt(document.getElementById('log-day').value),
+                phase: document.getElementById('log-phase').value,
+                comp: document.getElementById('log-competency').value,
+                score: parseInt(document.getElementById('log-score').value),
+                notes: document.getElementById('log-notes').value.trim()
+            });
+            e.target.reset(); saveData(); initData();
+        });
+
+        document.getElementById('form-error').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const t = getCurrentTrainee();
+            t.errors.push({
+                id: Date.now(),
+                date: document.getElementById('err-date').value,
+                desc: document.getElementById('err-desc').value.trim(),
+                root: document.getElementById('err-root').value.trim(),
+                action: document.getElementById('err-action').value.trim(),
+                status: document.getElementById('err-status').value
+            });
+            e.target.reset(); saveData(); initData();
+        });
+
+        function renderLogs() {
+            const t = getCurrentTrainee();
+            document.getElementById('learning-list').innerHTML = t.learning.sort((a,b)=>b.day-a.day).map(l => `
+                <div class="list-item">
+                    <strong>Day ${l.day} (${l.phase.split(' -')[0]})</strong> - Score: ${l.score}/10<br>
+                    <small style="color:var(--gold)">${l.comp}</small><br>
+                    <small>${l.notes}</small>
+                </div>`).join('');
+
+            document.getElementById('error-list').innerHTML = t.errors.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(er => `
+                <div class="list-item ${er.status === 'Not Yet' ? 'danger' : ''}">
+                    <strong>${er.date} [${er.status}]</strong><br>
+                    <small>Err: ${er.desc}</small><br>
+                    <small>Akar: ${er.root}</small><br>
+                    <small>Aksi: ${er.action}</small>
+                </div>`).join('');
+        }
+
+        function renderSOP() {
+            const t = getCurrentTrainee();
+            let html = '';
+            let currentCat = '';
+
+            t.sop.forEach((s, idx) => {
+                if (s.category !== currentCat) {
+                    html += `<h4 style="color:var(--white); margin: 20px 0 10px; border-bottom:1px solid #233554; padding-bottom:5px;">${s.category}</h4>`;
+                    currentCat = s.category;
+                }
+                html += `
+                <div class="sop-item" style="display:flex; flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span style="font-size:0.85rem; width:70%;">${s.name}</span>
+                        <div class="sop-actions">
+                            <button type="button" class="btn-outline btn-yes ${s.status === true ? 'active' : ''}" onclick="updateSop(${idx}, true)">Y</button>
+                            <button type="button" class="btn-outline btn-no ${s.status === false ? 'active' : ''}" onclick="updateSop(${idx}, false)">N</button>
+                        </div>
+                    </div>
+                    <input type="text" placeholder="Evidence/Catatan..." value="${s.evidence}" onchange="updateSopEv(${idx}, this.value)" style="padding:5px; font-size:0.8rem; background:rgba(0,0,0,0.2);">
+                </div>`;
+            });
+            document.getElementById('sop-checklist').innerHTML = html;
+        }
+
+        window.updateSop = function(idx, val) {
+            const t = getCurrentTrainee();
+            t.sop[idx].status = val;
+            saveData(); renderSOP(); renderDashboard();
+            if (val === false) document.getElementById('modal-critical').classList.remove('hidden');
+        };
+
+        window.updateSopEv = function(idx, val) {
+            const t = getCurrentTrainee();
+            t.sop[idx].evidence = val;
+            saveData();
+        };
+
+        document.getElementById('btn-close-modal').addEventListener('click', () => {
+            document.getElementById('modal-critical').classList.add('hidden');
+        });
+
+        // EXPORT TO EXCEL
+        document.getElementById('btn-export-excel').addEventListener('click', () => {
+            try {
+                const t = getCurrentTrainee();
+                const wb = XLSX.utils.book_new();
+                
+                const wsDash = XLSX.utils.json_to_sheet([{
+                    Nama_Trainee: t.name, Store: t.store, Mentor: t.mentor, 
+                    Total_Errors: t.errors.length, SOP_Gagal: t.sop.filter(s=>s.status===false).length
+                }]);
+                XLSX.utils.book_append_sheet(wb, wsDash, "Dashboard");
+
+                const wsLearn = XLSX.utils.json_to_sheet(t.learning.map(l => ({
+                    Day: l.day, Phase: l.phase, Competency: l.comp, Score: l.score, Notes: l.notes
+                })));
+                XLSX.utils.book_append_sheet(wb, wsLearn, "Learning Log");
+
+                const wsErr = XLSX.utils.json_to_sheet(t.errors.map(e => ({
+                    Tanggal: e.date, Deskripsi_Error: e.desc, Akar_Masalah: e.root, Aksi_Perbaikan: e.action, Status: e.status
+                })));
+                XLSX.utils.book_append_sheet(wb, wsErr, "Human Error");
+
+                const wsSOP = XLSX.utils.json_to_sheet(t.sop.map(s => ({
+                    Kategori: s.category, SOP_Item: s.name, Status: s.status === true ? "YES" : s.status === false ? "NO" : "BLANK", Evidence: s.evidence
+                })));
+                XLSX.utils.book_append_sheet(wb, wsSOP, "SOP Critical");
+
+                XLSX.writeFile(wb, `OJT_Report_${t.name.replace(/\s+/g, '_')}.xlsx`);
+            } catch(e) { alert("Error exporting: " + e.message); }
+        });
+
+        document.getElementById('btn-backup').addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "OJT_Backup_Data.json");
+            dlAnchorElem.click();
+        });
+
+        window.addEventListener('online',  () => document.getElementById('offline-indicator').classList.add('hidden'));
+        window.addEventListener('offline', () => document.getElementById('offline-indicator').classList.remove('hidden'));
+
+        window.onload = () => {
+            initData();
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
+        };
+    </script>
+</body>
+</html>
